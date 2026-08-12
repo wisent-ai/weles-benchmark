@@ -68,7 +68,7 @@ async def execute(request: dict[str, Any]) -> dict[str, Any]:
     with contextlib.redirect_stdout(sys.stderr):
         from browser_use import Agent, BrowserSession, ChatOpenAI
         llm = ChatOpenAI(
-            model=os.environ.get('BRAMA_MODEL', 'gpt-5.4-mini'),
+            model=os.environ.get('BRAMA_MODEL', 'weles/agent/primary'),
             api_key=required_env('BRAMA_API_KEY'),
             base_url=os.environ.get('BRAMA_BASE_URL', 'http://127.0.0.1:8080/v1'),
             temperature=None,

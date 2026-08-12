@@ -1,4 +1,5 @@
-import { Stagehand } from '@browserbasehq/stagehand';
+import { CustomOpenAIClient, Stagehand } from '@browserbasehq/stagehand';
+import OpenAI from 'openai';
 import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
 import { agentInstruction, parseAgentOutput, requiredUrl } from './agent-task.js';
 import { AdapterFailure } from './weles.js';
@@ -19,17 +20,15 @@ export class StagehandAdapter implements BenchmarkAdapter {
   async execute(execution: AdapterExecution): Promise<AdapterResult> {
     const apiKey = this.options.apiKey?.trim();
     if (!apiKey) throw new AdapterFailure('missing-brama-api-key');
-    const model = this.options.model?.trim() || 'gpt-5.4-mini';
-    const modelName = model.includes('/') ? model : `openai/${model}`;
+    const model = this.options.model?.trim() || 'weles/agent/primary';
+    const baseURL = this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1';
+    const llmClient = new CustomOpenAIClient({
+      modelName: model,
+      client: new OpenAI({ apiKey, baseURL }),
+    });
     const stagehand = new Stagehand({
       env: 'LOCAL',
-      model: {
-        modelName,
-        provider: 'openai',
-        apiKey,
-        baseURL: this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1',
-        reasoningEffort: 'low',
-      },
+      llmClient,
       localBrowserLaunchOptions: {
         headless: true,
         ...(this.options.executablePath?.trim() ? { executablePath: this.options.executablePath.trim() } : {}),

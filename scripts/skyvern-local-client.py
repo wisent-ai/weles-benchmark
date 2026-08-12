@@ -56,8 +56,8 @@ async def execute(request: dict[str, Any]) -> dict[str, Any]:
     case = request["case"]
     base_url = required_env("BRAMA_BASE_URL")
     api_key = required_env("BRAMA_API_KEY")
-    model = os.environ.get("BRAMA_MODEL", "gpt-5.4-mini").strip() or "gpt-5.4-mini"
-    model_name = model if "/" in model else f"openai/{model}"
+    model = os.environ.get("BRAMA_MODEL", "weles/agent/primary").strip() or "weles/agent/primary"
+    model_name = model if model.startswith("openai/") else f"openai/{model}"
     llm_config = LLMConfig(
         model_name=model_name,
         required_env_vars=[],
@@ -83,12 +83,13 @@ async def execute(request: dict[str, Any]) -> dict[str, Any]:
             wait_for_completion=True,
             timeout=request["timeoutMs"] / 1000,
         )
-        status = str(result.status).lower()
-        succeeded = status in {"completed", "runstatus.completed"}
+        raw_status = str(result.status).lower()
+        status = raw_status.rsplit(".", 1)[-1]
+        succeeded = status in {"completed", "succeeded"}
         return {
             "schema": "weles.benchmark.adapter-result.v1",
             "taskId": result.run_id,
-            "status": "succeeded" if succeeded else status,
+            "status": "succeeded" if succeeded else "failed",
             "receiptVerified": False,
             "output": normalize_output(result.output) if result.output is not None else {},
             "telemetry": {"browserSteps": result.step_count or 0},

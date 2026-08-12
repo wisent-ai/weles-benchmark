@@ -70,7 +70,7 @@ function record(value: unknown): Record<string, unknown> {
 function payloadError(value: unknown): string | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const source = value as Record<string, unknown>;
-  for (const key of ['error', 'message', 'detail']) {
+  for (const key of ['error', 'message', 'detail', 'stderr_tail', 'stdout_tail']) {
     const candidate = source[key];
     if (typeof candidate === 'string' && candidate.trim()) return candidate;
     if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {

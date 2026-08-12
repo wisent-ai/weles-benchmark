@@ -111,7 +111,7 @@ export BRAMA_UPSTREAM_BASE_URL=http://127.0.0.1:8080/v1
 node scripts/brama-openai-proxy.mjs &
 export BRAMA_BASE_URL=http://127.0.0.1:8789/v1
 export BRAMA_API_KEY=workload-scoped-brama-token
-export BRAMA_MODEL=gpt-5.4-mini
+export BRAMA_MODEL=weles/agent/primary
 export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
 
 node dist/cli.js run \
@@ -135,7 +135,7 @@ export BRAMA_UPSTREAM_BASE_URL=http://127.0.0.1:8080/v1
 node scripts/brama-openai-proxy.mjs &
 export BRAMA_BASE_URL=http://127.0.0.1:8789/v1
 export BRAMA_API_KEY=workload-scoped-brama-token
-export BRAMA_MODEL=gpt-5.4-mini
+export BRAMA_MODEL=weles/agent/primary
 export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
 
 node dist/cli.js run \

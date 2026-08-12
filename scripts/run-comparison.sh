@@ -45,7 +45,7 @@ cleanup() {
 trap cleanup EXIT
 sleep 2
 export BRAMA_BASE_URL="http://127.0.0.1:${BRAMA_PROXY_PORT}/v1"
-export BRAMA_MODEL="${BRAMA_MODEL:-gpt-5.4-mini}"
+export BRAMA_MODEL="${BRAMA_MODEL:-weles/agent/primary}"
 if [[ -z "${ALLOWED_HOSTS:-}" ]]; then
   export ALLOWED_HOSTS='["127.0.0.1"]'
 fi
