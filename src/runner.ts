@@ -147,16 +147,24 @@ function safeErrorCode(error: unknown): string {
 }
 
 function safeErrorDetail(error: unknown): string | undefined {
-  if (!error || typeof error !== 'object' || !('detail' in error)) return undefined;
-  const detail = Object.getOwnPropertyDescriptor(error, 'detail')?.value;
-  if (typeof detail !== 'string' || !detail.trim()) return undefined;
+  if (!(error instanceof Error)) return undefined;
+  const described = 'detail' in error
+    ? Object.getOwnPropertyDescriptor(error, 'detail')?.value
+    : undefined;
+  const detail = typeof described === 'string' && described.trim()
+    ? described
+    : error.message !== safeErrorCode(error)
+      ? error.message
+      : undefined;
+  if (!detail) return undefined;
   const redacted = detail
+    .replace(/\u001b\[[0-9;]*m/g, '')
     .replace(/\bBearer\s+\S+/gi, 'Bearer [redacted]')
     .replace(/\b(api[_-]?key|token|authorization)(\s*[:=]\s*)([^\s,;]+)/gi, '$1$2[redacted]')
     .replace(/\b[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]{10,})?\b/g, '[redacted-token]')
     .replace(/\s+/g, ' ')
     .trim();
-  return redacted ? redacted.slice(0, 1_000) : undefined;
+  return redacted ? redacted.slice(-1_000) : undefined;
 }
 
 function evaluateAssertion(output: JsonValue, assertion: Assertion): boolean {

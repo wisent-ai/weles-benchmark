@@ -75,6 +75,7 @@ async def execute(request: dict[str, Any]) -> dict[str, Any]:
             frequency_penalty=None,
             reasoning_effort='low',
             max_retries=1,
+            max_completion_tokens=None,
         )
         browser = BrowserSession(
             headless=True,

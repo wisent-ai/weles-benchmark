@@ -40,12 +40,7 @@ export class WelesAdapter implements BenchmarkAdapter {
     } catch {
       throw new AdapterFailure(`weles-http-${response.status}-invalid-json`);
     }
-    if (!response.ok) {
-      const source = payload && typeof payload === 'object' && !Array.isArray(payload)
-        ? payload as Record<string, unknown>
-        : {};
-      throw new AdapterFailure(`weles-http-${response.status}`, typeof source.error === 'string' ? source.error : undefined);
-    }
+    if (!response.ok) throw new AdapterFailure(`weles-http-${response.status}`, payloadError(payload));
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new AdapterFailure('weles-invalid-result');
     const source = payload as Record<string, unknown>;
     if (source.ok !== true) throw new AdapterFailure('weles-run-failed');
@@ -70,4 +65,18 @@ function required(value: string | undefined, name: string): string {
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function payloadError(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  for (const key of ['error', 'message', 'detail']) {
+    const candidate = source[key];
+    if (typeof candidate === 'string' && candidate.trim()) return candidate;
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      const message = (candidate as Record<string, unknown>).message;
+      if (typeof message === 'string' && message.trim()) return message;
+    }
+  }
+  return undefined;
 }
