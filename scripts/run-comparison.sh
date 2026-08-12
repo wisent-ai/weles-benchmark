@@ -39,17 +39,16 @@ export BRAMA_BASE_URL="${BRAMA_BASE_URL:-http://127.0.0.1:8080/v1}"
 export BRAMA_MODEL="${BRAMA_MODEL:-gpt-5.4-mini}"
 export BROWSER_USE_PYTHON="${BROWSER_USE_PYTHON:-.venv/bin/python}"
 if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" ]]; then
-  if [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
+  shopt -s nullglob
+  browser_candidates=("$HOME"/Library/Caches/ms-playwright/chromium-*/chrome-mac*/Chromium.app/Contents/MacOS/Chromium)
+  shopt -u nullglob
+  if (( ${#browser_candidates[@]} > 0 )); then
+    export BROWSER_EXECUTABLE_PATH="${browser_candidates[$((${#browser_candidates[@]} - 1))]}"
+  elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
     export BROWSER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   else
-    shopt -s nullglob
-    browser_candidates=("$HOME"/Library/Caches/ms-playwright/chromium-*/chrome-mac*/Chromium.app/Contents/MacOS/Chromium)
-    shopt -u nullglob
-    if (( ${#browser_candidates[@]} == 0 )); then
-      printf 'No dedicated-host Chromium executable found\n' >&2
-      exit 2
-    fi
-    export BROWSER_EXECUTABLE_PATH="${browser_candidates[$((${#browser_candidates[@]} - 1))]}"
+    printf 'No dedicated-host Chromium executable found\n' >&2
+    exit 2
   fi
 fi
 export WELES_API_BASE="${WELES_API_BASE:-http://127.0.0.1:8788}"
