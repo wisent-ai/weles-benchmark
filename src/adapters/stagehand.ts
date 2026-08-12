@@ -23,9 +23,11 @@ export class StagehandAdapter implements BenchmarkAdapter {
     const model = this.options.model?.trim() || 'weles/agent/primary';
     const baseURL = this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1';
     const provider = createOpenAI({ apiKey, baseURL });
-    const llmClient = new AISdkClient({
-      model: provider.chat(model),
-    });
+    const languageModel = provider.chat(model);
+    const llmClient = Object.assign(
+      new AISdkClient({ model: languageModel }),
+      { getLanguageModel: () => languageModel },
+    );
     const stagehand = new Stagehand({
       env: 'LOCAL',
       llmClient,
