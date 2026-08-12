@@ -1,115 +1,168 @@
 # Weles Benchmark
 
-Weles Benchmark measures authorized browser workflows without turning private
-worker state, recordings, or credentials into benchmark data. It runs a
-versioned suite through Weles or a process adapter, checks terminal outcomes and
-structured assertions, verifies Weles receipts through the official client, and
-writes reproducible JSON plus a Markdown report.
+Weles Benchmark measures Weles, Browser Use, Skyvern, and Stagehand against the
+same versioned browser tasks. The harness owns deterministic fixtures, normalized
+adapter results, assertions, aggregation, qualification, and comparison; each
+adapter retains its own browser and agent implementation.
 
-The harness reports measurements, not a composite score:
+The result is not a composite score. It records:
 
-- terminal success rate;
-- verified-receipt rate;
+- terminal and assertion success rates;
 - p50, p95, and p99 end-to-end duration;
-- first-run versus repeated-run speedup per case;
-- CAPTCHA/challenge encounter and solve rates when an adapter exposes them;
-- per-case distributions and typed failure counts.
+- first-run versus repeated-run speedup when repetitions exceed one;
+- browser steps, model tokens, and model cost when the client exposes them;
+- verified-receipt rate for adapters and suites that use signed receipts;
+- per-case distributions and typed failure codes.
 
-## Boundary
+## Execution boundary
 
-Weles remains the executor. This repository owns benchmark scenarios, the
-deterministic fixture, adapter normalization, aggregation, qualification, and
-comparison. It does not launch a browser itself, discover trajectories, provision
-a Weles organization, or authorize automation of an origin.
+Browser execution belongs on the Stado-selected dedicated host. The benchmark
+CLI itself may run anywhere, but the bundled direct adapters launch their
+browsers on the machine running the CLI. Do not run the browser adapters on an
+operator workstation.
 
-Every Weles case still requires an exact origin and action allowlist, a reviewed
-trajectory on the approved Weles host, and an organization-scoped bearer. The
-bundled suite points only at an operator-controlled fixture and carries no
-credential references.
+Weles uses its authenticated `/weles-builder` endpoint. Browser Use and
+Stagehand run local headless browsers and send model inference through Brama.
+Skyvern uses the official `@skyvern/client` against the configured Skyvern API.
+No adapter receives another adapter's credential.
 
 ```mermaid
 flowchart LR
   suite[Versioned suite] --> runner[Benchmark runner]
-  fixture[Deterministic fixture] --> executor
-  runner -->|official client| weles[Weles admission]
-  runner -->|JSON stdin/stdout| command[Command adapter]
-  weles --> executor[Authorized executor]
-  command --> executor
-  executor --> normalized[Terminal normalized result]
+  fixture[Deterministic fixture] --> agents
+  runner --> weles[Weles builder API]
+  runner --> bu[Browser Use]
+  runner --> skyvern[Skyvern client]
+  runner --> stagehand[Stagehand]
+  weles --> agents[Browser execution]
+  bu --> agents
+  skyvern --> agents
+  stagehand --> agents
+  agents --> normalized[Normalized result]
   normalized --> assertions[Assertions and metrics]
   assertions --> artifacts[Sanitized JSON and Markdown]
 ```
 
 ## Install
 
-Node.js 22 or newer is required.
+Node.js 22 or newer is required. Browser Use additionally requires Python 3.11
+or newer.
 
 ```sh
 npm ci --ignore-scripts
 npm run build
-node dist/cli.js --help
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-browser-use.txt
 ```
 
-`@wisent-ai/weles-client` is pinned to commit
-`c171a6e38f6a90c7fbdbad234a5437f166f10650`, so receipt behavior cannot drift
-between otherwise identical runs.
+The Node lockfile pins Stagehand 3.4.0 and `@skyvern/client` 1.0.0. The Python
+requirements file pins Browser Use 0.13.7.
 
-## Deterministic fixture
+## Common fixture suite
 
-The fixture contains five stable tasks: static extraction, navigation, reversible
-form submission, delayed client-side rendering, and a 100-row table scan.
+`suites/web-agent-v1.json` contains five tasks:
+
+1. static extraction;
+2. link navigation;
+3. reversible form submission;
+4. delayed client-side rendering;
+5. a 100-row structured table scan.
+
+Each task includes the natural-language instruction shown to every agent and an
+output-only JSON schema derived from its assertions. Expected values remain in
+the runner and are not added to the agent prompt.
+
+Start the fixture on the same dedicated host as the direct adapters:
 
 ```sh
 node dist/cli.js fixture --host 127.0.0.1 --port 8787
 ```
 
-The server prints its bound address once and stays in the foreground. For a Weles
-worker on another machine, publish this fixture through an operator-controlled
-HTTPS endpoint; do not expose the development HTTP listener directly to the
-internet. Pass that HTTPS origin to the run with `--fixture-origin`.
+Then use `http://127.0.0.1:8787` as `--fixture-origin`. A remote Skyvern Cloud
+browser cannot reach loopback; publish the fixture through an
+operator-controlled HTTPS endpoint for that adapter. Never expose the plain HTTP
+fixture directly to the internet.
 
-The reviewed Weles trajectories for `suites/fixture-v1.json` must return these
-normalized result objects:
+`suites/fixture-v1.json` remains the receipt-oriented Weles suite. The common
+`web-agent-v1.json` suite does not require receipts because the competing
+clients do not issue Weles receipts.
 
-| Action | Required result fields |
-|---|---|
-| `benchmark_static_extract` | `heading: "Static content"`, `items` containing `"gamma"`, `checksum: "alpha-beta-gamma"` |
-| `benchmark_navigation` | `recordId: "record-42"`, `value: "deterministic-detail"` |
-| `benchmark_form_submit` | `submitted: true`, `value: "weles-benchmark"` |
-| `benchmark_dynamic_render` | `message: "rendered-after-delay"` |
-| `benchmark_table_scan` | `rowCount: 100`, `indexChecksum: 5050` |
-
-Trajectory provisioning belongs to Weles because it is the authorization and
-execution boundary. The benchmark never substitutes an unreviewed browser script.
-
-## Run against Weles
-
-Configure the provisioned endpoint, organization, bearer, and caller-owned
-receipt keys:
+## Weles
 
 ```sh
-export WELES_API_BASE=https://provisioned-weles-endpoint.example/
-export WISENT_ORGANIZATION_ID=00000000-0000-0000-0000-000000000000
+export WELES_API_BASE=http://dedicated-host:8788
 export WELES_TOKEN=organization-scoped-bearer
-export WELES_RECEIPT_KEYS_FILE=/absolute/path/to/receipt-keys.json
 
 node dist/cli.js run \
-  --suite suites/fixture-v1.json \
-  --fixture-origin https://fixture.example.com \
+  --suite suites/web-agent-v1.json \
+  --fixture-origin http://127.0.0.1:8787 \
   --adapter weles \
   --out results/weles.json
 ```
 
-The bearer is intentionally accepted only through `WELES_TOKEN`; it cannot be
-placed on the command line. `WELES_RECEIPT_KEYS_FILE` contains a JSON object from
-key ID to PEM public key. A suite that requires receipts fails before submission
-when that trusted key map is absent.
+The adapter sends only the task instruction to `/weles-builder`, waits for the
+synchronous run, normalizes the returned `value`, and records the Weles run ID.
+The bearer is accepted only through `WELES_TOKEN`.
 
-The Weles adapter uses one caller-owned idempotency key per sample, submits once,
-and polls exact task status until the public terminal states `succeeded`,
-`failed`, or `cancelled`. It performs no hidden submission retry.
+## Browser Use through Brama
 
-## Compare another executor
+```sh
+export BRAMA_BASE_URL=http://127.0.0.1:8080/v1
+export BRAMA_API_KEY=workload-scoped-brama-token
+export BRAMA_MODEL=gpt-5.4-mini
+export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
+
+node dist/cli.js run \
+  --suite suites/web-agent-v1.json \
+  --fixture-origin http://127.0.0.1:8787 \
+  --adapter browser-use \
+  --python .venv/bin/python \
+  --out results/browser-use.json
+```
+
+The Python client runs Browser Use 0.13.7 in headless DOM mode, disables its
+secondary judge, and records its step, token, and cost totals. Model traffic is
+OpenAI-compatible traffic to Brama; no provider API key is used.
+
+## Stagehand through Brama
+
+```sh
+export BRAMA_BASE_URL=http://127.0.0.1:8080/v1
+export BRAMA_API_KEY=workload-scoped-brama-token
+export BRAMA_MODEL=gpt-5.4-mini
+export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
+
+node dist/cli.js run \
+  --suite suites/web-agent-v1.json \
+  --fixture-origin http://127.0.0.1:8787 \
+  --adapter stagehand \
+  --out results/stagehand.json
+```
+
+Stagehand 3.4.0 runs locally in DOM agent mode. `--model` and
+`--browser-executable` override the corresponding environment values without
+putting credentials on the command line.
+
+## Skyvern
+
+```sh
+export SKYVERN_API_KEY=skyvern-api-key
+# Optional for a self-hosted deployment:
+export SKYVERN_BASE_URL=https://skyvern.example.com
+
+node dist/cli.js run \
+  --suite suites/web-agent-v1.json \
+  --fixture-origin https://fixture.example.com \
+  --adapter skyvern \
+  --out results/skyvern.json
+```
+
+The official client submits one task, requests the suite-derived extraction
+schema, polls `getRun` to a terminal state, and performs no hidden task retry.
+`SKYVERN_ENGINE` defaults to `skyvern-2.0`; `SKYVERN_MAX_STEPS` defaults to 20.
+A self-hosted URL may omit `SKYVERN_API_KEY` when that deployment permits it.
+
+## Command adapter
 
 `--adapter command` runs one child process per sample without a shell. The
 executable receives one `weles.benchmark.task.v1` JSON object on stdin and must
@@ -117,7 +170,7 @@ write one `weles.benchmark.adapter-result.v1` JSON object to stdout.
 
 ```sh
 node dist/cli.js run \
-  --suite suites/fixture-v1.json \
+  --suite suites/web-agent-v1.json \
   --fixture-origin https://fixture.example.com \
   --adapter command \
   --command /absolute/path/to/adapter \
@@ -126,91 +179,50 @@ node dist/cli.js run \
   --out results/candidate.json
 ```
 
-Only `PATH`, `HOME`, `TMPDIR`, and `LANG` are inherited by default. Explicitly
-pass a required variable name with repeated `--command-env NAME`; this prevents a
-third-party adapter from receiving `WELES_TOKEN` merely because it exists in the
-parent process.
-
-Example adapter output:
-
-```json
-{
-  "schema": "weles.benchmark.adapter-result.v1",
-  "taskId": "adapter-owned-id",
-  "status": "succeeded",
-  "receiptVerified": false,
-  "output": {
-    "heading": "Static content",
-    "items": ["alpha", "beta", "gamma"],
-    "checksum": "alpha-beta-gamma"
-  },
-  "telemetry": {
-    "browserSteps": 4,
-    "inputTokens": 800,
-    "outputTokens": 60,
-    "costUsd": 0.01,
-    "challengeFaced": false
-  }
-}
-```
-
-The command is terminated at the case timeout, then killed after a two-second
-grace period if it ignores termination. Stdout and stderr are bounded to 1 MiB.
-The runner rejects malformed status, telemetry, and schema fields.
+Only `PATH`, `HOME`, `TMPDIR`, and `LANG` are inherited by default. Pass each
+required variable name with `--command-env NAME`. Child output is bounded to 1
+MiB, and the process is terminated at the case timeout.
 
 ## Reports and comparisons
 
-A run writes both the requested JSON and a sibling Markdown report. Regenerate a
-report or compare two runs with the exact same materialized suite revision:
+Each run writes a JSON artifact and a sibling Markdown report. Compare runs only
+when they carry the same materialized suite hash:
 
 ```sh
-node dist/cli.js report --input results/weles.json --out results/weles.md
 node dist/cli.js compare \
   --baseline results/weles.json \
-  --candidate results/candidate.json \
-  --out results/comparison.md
+  --candidate results/stagehand.json \
+  --out results/weles-vs-stagehand.md
 ```
 
 Duration ratios are candidate divided by baseline, so lower is faster. Success
 and receipt deltas are percentage points. Repeat speedup is first repetition
-duration divided by the median duration of later repetitions; it is a repeat
-measurement, not a claim that a particular cache caused the difference.
+duration divided by the median duration of later repetitions.
 
 ## Suite contract
 
-`suites/fixture-v1.json` uses `weles.benchmark.suite.v1`. Runtime validation and
-`schemas/suite.v1.schema.json` cover:
+`weles.benchmark.suite.v1` validates:
 
 - stable suite and case identities;
+- one natural-language instruction per case;
 - repetitions, concurrency, timeout, and poll interval;
 - exact origin, action, justification, and opaque credential references;
-- accepted terminal statuses and receipt requirement;
-- JSON Pointer assertions with `equals`, `exists`, and `includes`;
+- accepted terminal statuses and receipt requirements;
+- JSON Pointer assertions using `equals`, `exists`, and `includes`;
 - optional qualification thresholds for success, receipts, and p95 duration.
 
-`${FIXTURE_ORIGIN}` is the only supported template marker. The runner replaces it
-with the normalized `--fixture-origin`, then hashes the complete materialized
-suite. Runs against different origins therefore cannot be compared accidentally.
-Credential-shaped keys in scenario input are rejected; credentials belong in
-Weles `credentialRefs`, never in the suite.
+`${FIXTURE_ORIGIN}` is the only template marker. The runner materializes it and
+hashes the complete suite, preventing comparison across different fixture
+origins. Credential-shaped scenario keys are rejected.
 
-## Result privacy and reproducibility
+## Result privacy
 
-`weles.benchmark.run.v1` records the materialized suite hash, adapter contract,
+`weles.benchmark.run.v1` stores the materialized suite hash, adapter identity,
 Node/platform identity, timestamps, sanitized samples, distributions, and
-qualification. It deliberately excludes:
-
-- scenario inputs and credential references;
-- endpoint URL, organization ID, and bearer;
-- raw Weles responses and adapter stdout;
-- receipt bodies, evidence, DOM, screenshots, and recordings;
-- exception messages and provider pages.
-
-Only typed status, timing, receipt-verification state, assertion counts, failure
-codes, and optional numeric/boolean telemetry survive. This is enough to compare
-behavior without making the result artifact a second store for customer data.
+qualification. It excludes task inputs, credentials, endpoint URLs, raw adapter
+responses, DOM, screenshots, recordings, and provider pages.
 
 ## License
 
-MIT. A license to this harness does not grant access to Weles or authorize
-browser automation of any target.
+MIT. A license to this harness does not grant access to Weles, Brama, Skyvern,
+or any target origin.

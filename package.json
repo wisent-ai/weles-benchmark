@@ -15,7 +15,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@wisent-ai/weles-client": "https://github.com/wisent-ai/weles-client/archive/c171a6e38f6a90c7fbdbad234a5437f166f10650.tar.gz"
+    "@browserbasehq/stagehand": "3.4.0",
+    "@skyvern/client": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

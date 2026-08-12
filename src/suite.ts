@@ -84,6 +84,7 @@ function benchmarkCase(value: unknown, index: number): BenchmarkCase {
   return {
     id: text(source.id, `${label}.id`),
     title: text(source.title, `${label}.title`),
+    instruction: text(source.instruction, `${label}.instruction`),
     origin: text(source.origin, `${label}.origin`),
     action: text(source.action, `${label}.action`),
     input: rawInput,

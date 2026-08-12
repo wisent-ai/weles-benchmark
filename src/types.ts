@@ -11,6 +11,7 @@ export type Assertion = {
 export type BenchmarkCase = {
   id: string;
   title: string;
+  instruction: string;
   origin: string;
   action: string;
   input: JsonObject;

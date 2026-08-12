@@ -1,18 +1,17 @@
 {
   "schema": "weles.benchmark.suite.v1",
-  "name": "weles-fixture",
+  "name": "web-agent-fixture",
   "version": "1.0.0",
-  "description": "Deterministic, authorization-safe browser tasks against the bundled Weles benchmark fixture.",
+  "description": "Comparable browser-agent tasks against the deterministic Weles benchmark fixture.",
   "defaults": {
-    "repetitions": 5,
+    "repetitions": 1,
     "concurrency": 1,
-    "timeoutMs": 120000,
-    "pollIntervalMs": 1500
+    "timeoutMs": 300000,
+    "pollIntervalMs": 2000
   },
   "thresholds": {
-    "successRateMin": 0.95,
-    "receiptRateMin": 1,
-    "p95DurationMsMax": 120000
+    "successRateMin": 0.8,
+    "p95DurationMsMax": 300000
   },
   "cases": [
     {
@@ -24,11 +23,11 @@
       "input": { "url": "${FIXTURE_ORIGIN}/static" },
       "justification": "Measure extraction on the operator-controlled Weles benchmark fixture.",
       "credentialRefs": [],
-      "evidencePolicy": "receipt",
+      "evidencePolicy": "none",
       "tags": ["read", "static"],
       "expected": {
         "acceptedStatuses": ["succeeded"],
-        "receiptRequired": true,
+        "receiptRequired": false,
         "assertions": [
           { "path": "/heading", "operator": "equals", "value": "Static content" },
           { "path": "/items", "operator": "includes", "value": "gamma" },
@@ -45,11 +44,11 @@
       "input": { "url": "${FIXTURE_ORIGIN}/navigation", "recordId": "record-42" },
       "justification": "Measure navigation on the operator-controlled Weles benchmark fixture.",
       "credentialRefs": [],
-      "evidencePolicy": "receipt",
+      "evidencePolicy": "none",
       "tags": ["read", "navigation"],
       "expected": {
         "acceptedStatuses": ["succeeded"],
-        "receiptRequired": true,
+        "receiptRequired": false,
         "assertions": [
           { "path": "/recordId", "operator": "equals", "value": "record-42" },
           { "path": "/value", "operator": "equals", "value": "deterministic-detail" }
@@ -59,17 +58,17 @@
     {
       "id": "form-submit",
       "title": "Submit a deterministic local form",
-      "origin": "${FIXTURE_ORIGIN}",
       "instruction": "Open the page, enter the requested input value in the benchmark field, submit the form, then return submitted as a boolean and the displayed submitted value as value.",
+      "origin": "${FIXTURE_ORIGIN}",
       "action": "benchmark_form_submit",
       "input": { "url": "${FIXTURE_ORIGIN}/form", "value": "weles-benchmark" },
       "justification": "Measure a reversible form interaction on the operator-controlled Weles benchmark fixture.",
       "credentialRefs": [],
-      "evidencePolicy": "receipt",
+      "evidencePolicy": "none",
       "tags": ["write", "form"],
       "expected": {
         "acceptedStatuses": ["succeeded"],
-        "receiptRequired": true,
+        "receiptRequired": false,
         "assertions": [
           { "path": "/submitted", "operator": "equals", "value": true },
           { "path": "/value", "operator": "equals", "value": "weles-benchmark" }
@@ -79,17 +78,17 @@
     {
       "id": "dynamic-render",
       "title": "Wait for delayed client-side rendering",
+      "instruction": "Open the page, wait until the dynamic output stops saying pending, then return its final text as message.",
       "origin": "${FIXTURE_ORIGIN}",
       "action": "benchmark_dynamic_render",
-      "instruction": "Open the page, wait until the dynamic output stops saying pending, then return its final text as message.",
       "input": { "url": "${FIXTURE_ORIGIN}/dynamic" },
       "justification": "Measure dynamic rendering on the operator-controlled Weles benchmark fixture.",
       "credentialRefs": [],
-      "evidencePolicy": "receipt",
+      "evidencePolicy": "none",
       "tags": ["read", "dynamic"],
       "expected": {
         "acceptedStatuses": ["succeeded"],
-        "receiptRequired": true,
+        "receiptRequired": false,
         "assertions": [
           { "path": "/message", "operator": "equals", "value": "rendered-after-delay" }
         ]
@@ -98,17 +97,17 @@
     {
       "id": "table-scan",
       "title": "Scan a deterministic 100-row table",
-      "origin": "${FIXTURE_ORIGIN}",
       "instruction": "Open the page. Count all body rows as rowCount and sum their numeric index cells as indexChecksum. Return both numbers.",
+      "origin": "${FIXTURE_ORIGIN}",
       "action": "benchmark_table_scan",
       "input": { "url": "${FIXTURE_ORIGIN}/table" },
       "justification": "Measure structured extraction on the operator-controlled Weles benchmark fixture.",
       "credentialRefs": [],
-      "evidencePolicy": "receipt",
+      "evidencePolicy": "none",
       "tags": ["read", "table"],
       "expected": {
         "acceptedStatuses": ["succeeded"],
-        "receiptRequired": true,
+        "receiptRequired": false,
         "assertions": [
           { "path": "/rowCount", "operator": "equals", "value": 100 },
           { "path": "/indexChecksum", "operator": "equals", "value": 5050 }

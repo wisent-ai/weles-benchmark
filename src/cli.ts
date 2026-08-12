@@ -2,13 +2,16 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, extname } from 'node:path';
+import { BrowserUseAdapter } from './adapters/browser-use.js';
 import { CommandAdapter } from './adapters/command.js';
+import { SkyvernAdapter } from './adapters/skyvern.js';
+import { StagehandAdapter } from './adapters/stagehand.js';
 import { WelesAdapter } from './adapters/weles.js';
 import { serveFixture } from './fixture.js';
 import { compareRuns, markdownComparison, markdownReport } from './report.js';
 import { runBenchmark } from './runner.js';
 import { loadSuite } from './suite.js';
-import type { BenchmarkRun } from './types.js';
+import type { BenchmarkAdapter, BenchmarkRun } from './types.js';
 
 type Arguments = {
   command: string;
@@ -20,16 +23,20 @@ const HELP = `weles-benchmark
 
 Commands:
   fixture [--host 127.0.0.1] [--port 8787]
-  run --suite <file> [--adapter weles|command] [--out <file>]
+  run --suite <file> [--adapter weles|browser-use|skyvern|stagehand|command] [--out <file>]
       [--fixture-origin <url>] [--repetitions <n>] [--concurrency <n>]
-      Weles: [--endpoint <url>] [--organization-id <id>] [--receipt-keys <file>]
+      Weles: [--endpoint <url>]
+      Browser Use: [--python <executable>]
+      Skyvern: [--skyvern-base-url <url>]
+      Stagehand: [--model <Brama-model>] [--browser-executable <path>]
       Command: --command <executable> [--command-arg <arg>] [--command-env <name>]
   report --input <run.json> [--out <report.md>]
   compare --baseline <run.json> --candidate <run.json> [--out <comparison.md>] [--json]
 
-Weles credentials default to WELES_API_BASE, WISENT_ORGANIZATION_ID, WELES_TOKEN,
-and WELES_RECEIPT_KEYS_FILE. Credential values are never accepted as CLI flags or
-written to result files.
+Credentials come only from WELES_TOKEN, SKYVERN_API_KEY, and BRAMA_API_KEY.
+Service/model locations default to WELES_API_BASE, SKYVERN_BASE_URL,
+BRAMA_BASE_URL, and BRAMA_MODEL. Credential values are never accepted as CLI
+flags or written to result files.
 `;
 
 async function main(): Promise<void> {
@@ -76,26 +83,12 @@ async function main(): Promise<void> {
 async function runCommand(parsed: Arguments): Promise<void> {
   assertAllowedOptions(parsed, [
     'suite', 'adapter', 'out', 'report-out', 'fixture-origin', 'repetitions', 'concurrency',
-    'endpoint', 'organization-id', 'receipt-keys', 'command', 'command-arg', 'command-env', 'adapter-name',
+    'endpoint', 'python', 'skyvern-base-url', 'model', 'browser-executable',
+    'command', 'command-arg', 'command-env', 'adapter-name',
   ]);
   const suitePath = requiredOption(parsed, 'suite');
   const loaded = await loadSuite(suitePath, option(parsed, 'fixture-origin'));
-  const adapterName = option(parsed, 'adapter') ?? 'weles';
-  const adapter = adapterName === 'weles'
-    ? await WelesAdapter.create(loaded.suite, {
-      ...(option(parsed, 'endpoint') ?? process.env.WELES_API_BASE ? { endpoint: option(parsed, 'endpoint') ?? process.env.WELES_API_BASE } : {}),
-      ...(process.env.WELES_TOKEN ? { bearer: process.env.WELES_TOKEN } : {}),
-      ...(option(parsed, 'organization-id') ?? process.env.WISENT_ORGANIZATION_ID ? { organizationId: option(parsed, 'organization-id') ?? process.env.WISENT_ORGANIZATION_ID } : {}),
-      ...(option(parsed, 'receipt-keys') ?? process.env.WELES_RECEIPT_KEYS_FILE ? { receiptKeysFile: option(parsed, 'receipt-keys') ?? process.env.WELES_RECEIPT_KEYS_FILE } : {}),
-    })
-    : adapterName === 'command'
-      ? new CommandAdapter(
-        requiredOption(parsed, 'command'),
-        parsed.options['command-arg'] ?? [],
-        parsed.options['command-env'] ?? [],
-        option(parsed, 'adapter-name'),
-      )
-      : (() => { throw new Error('--adapter must be weles or command'); })();
+  const adapter = createAdapter(parsed);
   const repetitions = optionalPositiveInteger(option(parsed, 'repetitions'), '--repetitions');
   const concurrency = optionalPositiveInteger(option(parsed, 'concurrency'), '--concurrency');
   const result = await runBenchmark({
@@ -117,6 +110,44 @@ async function runCommand(parsed: Arguments): Promise<void> {
     qualification: result.qualification,
   }, null, 2)}\n`);
   if (!result.qualification.passed) process.exitCode = 1;
+}
+
+function createAdapter(parsed: Arguments): BenchmarkAdapter {
+  const adapterName = option(parsed, 'adapter') ?? 'weles';
+  if (adapterName === 'weles') {
+    const endpoint = option(parsed, 'endpoint') ?? process.env.WELES_API_BASE;
+    return WelesAdapter.create({
+      ...(endpoint ? { endpoint } : {}),
+      ...(process.env.WELES_TOKEN ? { bearer: process.env.WELES_TOKEN } : {}),
+    });
+  }
+  if (adapterName === 'browser-use') return new BrowserUseAdapter(option(parsed, 'python'));
+  if (adapterName === 'skyvern') {
+    const baseUrl = option(parsed, 'skyvern-base-url') ?? process.env.SKYVERN_BASE_URL;
+    return new SkyvernAdapter({
+      ...(process.env.SKYVERN_API_KEY ? { apiKey: process.env.SKYVERN_API_KEY } : {}),
+      ...(baseUrl ? { baseUrl } : {}),
+    });
+  }
+  if (adapterName === 'stagehand') {
+    const model = option(parsed, 'model') ?? process.env.BRAMA_MODEL;
+    const executablePath = option(parsed, 'browser-executable') ?? process.env.BROWSER_EXECUTABLE_PATH;
+    return new StagehandAdapter({
+      ...(process.env.BRAMA_API_KEY ? { apiKey: process.env.BRAMA_API_KEY } : {}),
+      ...(process.env.BRAMA_BASE_URL ? { baseUrl: process.env.BRAMA_BASE_URL } : {}),
+      ...(model ? { model } : {}),
+      ...(executablePath ? { executablePath } : {}),
+    });
+  }
+  if (adapterName === 'command') {
+    return new CommandAdapter(
+      requiredOption(parsed, 'command'),
+      parsed.options['command-arg'] ?? [],
+      parsed.options['command-env'] ?? [],
+      option(parsed, 'adapter-name'),
+    );
+  }
+  throw new Error('--adapter must be weles, browser-use, skyvern, stagehand, or command');
 }
 
 function parseArguments(values: string[]): Arguments {

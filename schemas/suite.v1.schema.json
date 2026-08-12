@@ -36,10 +36,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "origin", "action", "input", "justification", "expected"],
+        "required": ["id", "title", "instruction", "origin", "action", "input", "justification", "expected"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "title": { "type": "string", "minLength": 1 },
+          "instruction": { "type": "string", "minLength": 1 },
           "origin": { "type": "string", "minLength": 1 },
           "action": { "type": "string", "minLength": 1 },
           "input": { "type": "object" },
