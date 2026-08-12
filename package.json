@@ -1,0 +1,29 @@
+{
+  "name": "@wisent-ai/weles-benchmark",
+  "version": "0.1.0",
+  "description": "Reproducible benchmark harness for authorized Weles browser workflows",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "weles-benchmark": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "benchmark": "node dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@wisent-ai/weles-client": "https://github.com/wisent-ai/weles-client/archive/c171a6e38f6a90c7fbdbad234a5437f166f10650.tar.gz"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wisent-ai/weles-benchmark.git"
+  },
+  "license": "MIT"
+}

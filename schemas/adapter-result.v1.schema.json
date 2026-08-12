@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wisent-ai/weles-benchmark/schemas/adapter-result.v1.schema.json",
+  "title": "Weles benchmark adapter result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "output"],
+  "properties": {
+    "schema": { "const": "weles.benchmark.adapter-result.v1" },
+    "taskId": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "minLength": 1 },
+    "receiptVerified": { "type": "boolean", "default": false },
+    "output": true,
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "challengeFaced": { "type": "boolean" },
+        "challengeSolved": { "type": "boolean" },
+        "browserSteps": { "type": "number", "minimum": 0 },
+        "inputTokens": { "type": "number", "minimum": 0 },
+        "outputTokens": { "type": "number", "minimum": 0 },
+        "costUsd": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

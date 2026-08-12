@@ -1,0 +1,114 @@
+{
+  "schema": "weles.benchmark.suite.v1",
+  "name": "weles-fixture",
+  "version": "1.0.0",
+  "description": "Deterministic, authorization-safe browser tasks against the bundled Weles benchmark fixture.",
+  "defaults": {
+    "repetitions": 5,
+    "concurrency": 1,
+    "timeoutMs": 120000,
+    "pollIntervalMs": 1500
+  },
+  "thresholds": {
+    "successRateMin": 0.95,
+    "receiptRateMin": 1,
+    "p95DurationMsMax": 120000
+  },
+  "cases": [
+    {
+      "id": "static-extraction",
+      "title": "Extract deterministic static content",
+      "origin": "${FIXTURE_ORIGIN}",
+      "action": "benchmark_static_extract",
+      "input": { "url": "${FIXTURE_ORIGIN}/static" },
+      "justification": "Measure extraction on the operator-controlled Weles benchmark fixture.",
+      "credentialRefs": [],
+      "evidencePolicy": "receipt",
+      "tags": ["read", "static"],
+      "expected": {
+        "acceptedStatuses": ["succeeded"],
+        "receiptRequired": true,
+        "assertions": [
+          { "path": "/heading", "operator": "equals", "value": "Static content" },
+          { "path": "/items", "operator": "includes", "value": "gamma" },
+          { "path": "/checksum", "operator": "equals", "value": "alpha-beta-gamma" }
+        ]
+      }
+    },
+    {
+      "id": "navigation",
+      "title": "Follow a link to a canonical record",
+      "origin": "${FIXTURE_ORIGIN}",
+      "action": "benchmark_navigation",
+      "input": { "url": "${FIXTURE_ORIGIN}/navigation", "recordId": "record-42" },
+      "justification": "Measure navigation on the operator-controlled Weles benchmark fixture.",
+      "credentialRefs": [],
+      "evidencePolicy": "receipt",
+      "tags": ["read", "navigation"],
+      "expected": {
+        "acceptedStatuses": ["succeeded"],
+        "receiptRequired": true,
+        "assertions": [
+          { "path": "/recordId", "operator": "equals", "value": "record-42" },
+          { "path": "/value", "operator": "equals", "value": "deterministic-detail" }
+        ]
+      }
+    },
+    {
+      "id": "form-submit",
+      "title": "Submit a deterministic local form",
+      "origin": "${FIXTURE_ORIGIN}",
+      "action": "benchmark_form_submit",
+      "input": { "url": "${FIXTURE_ORIGIN}/form", "value": "weles-benchmark" },
+      "justification": "Measure a reversible form interaction on the operator-controlled Weles benchmark fixture.",
+      "credentialRefs": [],
+      "evidencePolicy": "receipt",
+      "tags": ["write", "form"],
+      "expected": {
+        "acceptedStatuses": ["succeeded"],
+        "receiptRequired": true,
+        "assertions": [
+          { "path": "/submitted", "operator": "equals", "value": true },
+          { "path": "/value", "operator": "equals", "value": "weles-benchmark" }
+        ]
+      }
+    },
+    {
+      "id": "dynamic-render",
+      "title": "Wait for delayed client-side rendering",
+      "origin": "${FIXTURE_ORIGIN}",
+      "action": "benchmark_dynamic_render",
+      "input": { "url": "${FIXTURE_ORIGIN}/dynamic" },
+      "justification": "Measure dynamic rendering on the operator-controlled Weles benchmark fixture.",
+      "credentialRefs": [],
+      "evidencePolicy": "receipt",
+      "tags": ["read", "dynamic"],
+      "expected": {
+        "acceptedStatuses": ["succeeded"],
+        "receiptRequired": true,
+        "assertions": [
+          { "path": "/message", "operator": "equals", "value": "rendered-after-delay" }
+        ]
+      }
+    },
+    {
+      "id": "table-scan",
+      "title": "Scan a deterministic 100-row table",
+      "origin": "${FIXTURE_ORIGIN}",
+      "action": "benchmark_table_scan",
+      "input": { "url": "${FIXTURE_ORIGIN}/table" },
+      "justification": "Measure structured extraction on the operator-controlled Weles benchmark fixture.",
+      "credentialRefs": [],
+      "evidencePolicy": "receipt",
+      "tags": ["read", "table"],
+      "expected": {
+        "acceptedStatuses": ["succeeded"],
+        "receiptRequired": true,
+        "assertions": [
+          { "path": "/rowCount", "operator": "equals", "value": 100 },
+          { "path": "/indexChecksum", "operator": "equals", "value": 5050 }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "schema": "wisent.release-policy.v1",
+  "publishes": false,
+  "reason": "Benchmark source and result format are versioned in git; this repository publishes no package or service."
+}
