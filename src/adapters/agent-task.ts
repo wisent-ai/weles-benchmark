@@ -5,6 +5,7 @@ export function agentInstruction(benchmarkCase: BenchmarkCase): string {
   return [
     benchmarkCase.instruction,
     `Start at: ${requiredUrl(benchmarkCase)}`,
+    `Task input: ${JSON.stringify(benchmarkCase.input)}`,
     `Return only one JSON object matching this schema: ${JSON.stringify(schema)}`,
     'Do not include Markdown, commentary, or values that were not read from the page.',
   ].join('\n');
