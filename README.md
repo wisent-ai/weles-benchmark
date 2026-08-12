@@ -56,7 +56,7 @@ python3 -m venv .venv
 ```
 
 The Node lockfile pins Stagehand 3.4.0 and `@skyvern/client` 1.0.0. The Python
-requirements file pins Browser Use 0.13.7.
+requirements file pins Browser Use 0.13.7 and Playwright 1.55.0.
 
 ## Common fixture suite
 
@@ -161,6 +161,23 @@ The official client submits one task, requests the suite-derived extraction
 schema, polls `getRun` to a terminal state, and performs no hidden task retry.
 `SKYVERN_ENGINE` defaults to `skyvern-2.0`; `SKYVERN_MAX_STEPS` defaults to 20.
 A self-hosted URL may omit `SKYVERN_API_KEY` when that deployment permits it.
+
+For the dedicated-host comparison, `scripts/prepare-skyvern-host.sh` provisions
+Skyvern 1.0.48 and PostgreSQL in an isolated Docker Compose project, configures
+model access through Brama, waits for the API health check, and writes the
+generated API key to an owner-only Stado file. Install and invoke it through
+Stado:
+
+```sh
+stado host install-helper charless-mac-mini \
+  scripts/prepare-skyvern-host.sh weles-benchmark-prepare-skyvern
+stado host run-helper charless-mac-mini weles-benchmark-prepare-skyvern --json
+```
+
+The resulting API listens only on `127.0.0.1:18000`. During a four-adapter run,
+bind the fixture to the host's private Stado/Tailscale address and use that same
+URL for every adapter; Skyvern's container and the native-host clients must
+materialize an identical suite hash.
 
 ## Command adapter
 

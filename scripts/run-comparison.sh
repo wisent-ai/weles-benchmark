@@ -3,6 +3,7 @@ set -euo pipefail
 
 suite="${BENCHMARK_SUITE:-suites/web-agent-v1.json}"
 fixture_origin="${FIXTURE_ORIGIN:-http://127.0.0.1:8787}"
+fixture_host="${FIXTURE_HOST:-127.0.0.1}"
 results_dir="${RESULTS_DIR:-results}"
 mkdir -p "$results_dir"
 
@@ -26,7 +27,7 @@ npm run build
 .venv/bin/python -m pip install --disable-pip-version-check -r requirements-browser-use.txt
 .venv/bin/python -m playwright install chromium
 
-node dist/cli.js fixture --host 127.0.0.1 --port 8787 >"$results_dir/fixture.log" 2>&1 &
+node dist/cli.js fixture --host "$fixture_host" --port 8787 >"$results_dir/fixture.log" 2>&1 &
 fixture_pid=$!
 cleanup() {
   kill "$fixture_pid" 2>/dev/null || true
@@ -52,7 +53,6 @@ if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" ]]; then
   fi
 fi
 export WELES_API_BASE="${WELES_API_BASE:-http://127.0.0.1:8788}"
-
 run_adapter() {
   local adapter="$1"
   shift
