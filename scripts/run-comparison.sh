@@ -6,9 +6,23 @@ fixture_origin="${FIXTURE_ORIGIN:-http://127.0.0.1:8787}"
 results_dir="${RESULTS_DIR:-results}"
 mkdir -p "$results_dir"
 
+python="${BENCHMARK_PYTHON:-}"
+if [[ -z "$python" ]]; then
+  for candidate in python3.13 python3.12 python3.11; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      python="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$python" ]]; then
+  printf 'Python 3.11 or newer is required\n' >&2
+  exit 2
+fi
+
 npm ci --ignore-scripts
 npm run build
-python3 -m venv .venv
+"$python" -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -r requirements-browser-use.txt
 .venv/bin/python -m playwright install chromium
 
