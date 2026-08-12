@@ -5,6 +5,7 @@ suite="${BENCHMARK_SUITE:-suites/web-agent-v1.json}"
 fixture_origin="${FIXTURE_ORIGIN:-http://127.0.0.1:8787}"
 fixture_host="${FIXTURE_HOST:-127.0.0.1}"
 results_dir="${RESULTS_DIR:-results}"
+concurrency="${BENCHMARK_CONCURRENCY:-1}"
 mkdir -p "$results_dir"
 
 python="${BENCHMARK_PYTHON:-}"
@@ -63,6 +64,7 @@ run_adapter() {
     --suite "$suite" \
     --fixture-origin "$fixture_origin" \
     --adapter "$adapter" \
+    --concurrency "$concurrency" \
     --out "$results_dir/$adapter.json" \
     "$@"
   local status=$?
@@ -85,6 +87,7 @@ else
     --adapter command \
     --command .skyvern-venv/bin/python \
     --command-arg scripts/skyvern-local-client.py \
+    --concurrency "$concurrency" \
     --command-env BRAMA_API_KEY \
     --command-env BRAMA_BASE_URL \
     --command-env BRAMA_MODEL \
