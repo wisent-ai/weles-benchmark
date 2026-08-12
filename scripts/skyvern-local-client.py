@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import contextlib
 import json
 import os
 import sys
@@ -99,7 +100,8 @@ async def execute(request: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     try:
         request = json.load(sys.stdin)
-        result = asyncio.run(execute(request))
+        with contextlib.redirect_stdout(sys.stderr):
+            result = asyncio.run(execute(request))
         sys.stdout.write(json.dumps(result, separators=(",", ":")))
     except Exception as error:
         sys.stderr.write(f"{type(error).__name__}: {error}\n")
