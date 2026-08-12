@@ -89,6 +89,7 @@ export type BenchmarkSample = {
   assertionsPassed: number;
   assertionsTotal: number;
   failureCode?: string;
+  failureDetail?: string;
   telemetry: AdapterTelemetry;
 };
 

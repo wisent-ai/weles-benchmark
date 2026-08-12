@@ -2,7 +2,7 @@ import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types
 import { agentInstruction, parseAgentOutput } from './agent-task.js';
 
 export class AdapterFailure extends Error {
-  constructor(readonly code: string) {
+  constructor(readonly code: string, readonly detail?: string) {
     super(code);
     this.name = 'AdapterFailure';
   }
@@ -40,7 +40,12 @@ export class WelesAdapter implements BenchmarkAdapter {
     } catch {
       throw new AdapterFailure(`weles-http-${response.status}-invalid-json`);
     }
-    if (!response.ok) throw new AdapterFailure(`weles-http-${response.status}`);
+    if (!response.ok) {
+      const source = payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? payload as Record<string, unknown>
+        : {};
+      throw new AdapterFailure(`weles-http-${response.status}`, typeof source.error === 'string' ? source.error : undefined);
+    }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new AdapterFailure('weles-invalid-result');
     const source = payload as Record<string, unknown>;
     if (source.ok !== true) throw new AdapterFailure('weles-run-failed');

@@ -26,7 +26,7 @@ export class CommandAdapter implements BenchmarkAdapter {
       shell: false,
     });
     let stdout = Buffer.alloc(0);
-    let stderrSize = 0;
+    let stderr = Buffer.alloc(0);
     let overflow = false;
     child.stdout.on('data', (chunk: Buffer) => {
       if (stdout.length + chunk.length > OUTPUT_LIMIT) {
@@ -37,11 +37,12 @@ export class CommandAdapter implements BenchmarkAdapter {
       stdout = Buffer.concat([stdout, chunk]);
     });
     child.stderr.on('data', (chunk: Buffer) => {
-      stderrSize += chunk.length;
-      if (stderrSize > OUTPUT_LIMIT) {
+      if (stderr.length + chunk.length > OUTPUT_LIMIT) {
         overflow = true;
         child.kill('SIGTERM');
+        return;
       }
+      stderr = Buffer.concat([stderr, chunk]);
     });
     const completion = Promise.withResolvers<number | null>();
     let timedOut = false;
@@ -65,7 +66,10 @@ export class CommandAdapter implements BenchmarkAdapter {
       clearTimeout(escalation);
     });
     if (overflow) throw new AdapterFailure('command-output-too-large');
-    if (code !== 0) throw new AdapterFailure(timedOut ? 'command-timeout' : code === null ? 'command-signal' : `command-exit-${code}`);
+    if (code !== 0) {
+      const detail = stderr.toString('utf8').trim().slice(-4_000) || undefined;
+      throw new AdapterFailure(timedOut ? 'command-timeout' : code === null ? 'command-signal' : `command-exit-${code}`, detail);
+    }
     let parsed: unknown;
     try {
       parsed = JSON.parse(stdout.toString('utf8'));

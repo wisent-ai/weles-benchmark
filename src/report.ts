@@ -41,7 +41,18 @@ export function markdownReport(run: BenchmarkRun): string {
   if (failures.length > 0) {
     lines.push('', '## Failure codes', '', '| Code | Samples |', '|---|---:|', ...failures.map(([code, count]) => `| \`${code}\` | ${count} |`));
   }
-  lines.push('', '> Results intentionally exclude scenario inputs, credential references, raw service responses, recordings, and secrets.', '');
+  const diagnostics = run.samples.filter((sample) => sample.failureDetail);
+  if (diagnostics.length > 0) {
+    lines.push(
+      '',
+      '## Failure diagnostics',
+      '',
+      '| Case | Diagnostic |',
+      '|---|---|',
+      ...diagnostics.map((sample) => `| ${escapeCell(sample.caseId)} | ${escapeCell(sample.failureDetail ?? '')} |`),
+    );
+  }
+  lines.push('', '> Results exclude scenario inputs, credential references, raw service responses, recordings, and secrets. Failure diagnostics are bounded and redact credential-shaped values.', '');
   return lines.join('\n');
 }
 

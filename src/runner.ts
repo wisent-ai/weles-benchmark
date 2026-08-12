@@ -107,6 +107,7 @@ async function executeSample(options: {
       telemetry: result.telemetry,
     };
   } catch (error) {
+    const failureDetail = safeErrorDetail(error);
     return {
       caseId: options.benchmarkCase.id,
       caseTitle: options.benchmarkCase.title,
@@ -119,6 +120,7 @@ async function executeSample(options: {
       assertionsPassed: 0,
       assertionsTotal: options.benchmarkCase.expected.assertions.length,
       failureCode: safeErrorCode(error),
+      ...(failureDetail === undefined ? {} : { failureDetail }),
       telemetry: {},
     };
   }
@@ -142,6 +144,19 @@ function safeErrorCode(error: unknown): string {
   }
   if (error instanceof Error && /^[a-z0-9_-]{1,80}$/i.test(error.message)) return error.message;
   return 'adapter-failed';
+}
+
+function safeErrorDetail(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object' || !('detail' in error)) return undefined;
+  const detail = Object.getOwnPropertyDescriptor(error, 'detail')?.value;
+  if (typeof detail !== 'string' || !detail.trim()) return undefined;
+  const redacted = detail
+    .replace(/\bBearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\b(api[_-]?key|token|authorization)(\s*[:=]\s*)([^\s,;]+)/gi, '$1$2[redacted]')
+    .replace(/\b[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]{10,})?\b/g, '[redacted-token]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return redacted ? redacted.slice(0, 1_000) : undefined;
 }
 
 function evaluateAssertion(output: JsonValue, assertion: Assertion): boolean {

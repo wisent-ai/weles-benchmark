@@ -48,8 +48,11 @@ export class StagehandAdapter implements BenchmarkAdapter {
         page,
         signal: AbortSignal.timeout(execution.timeoutMs),
       });
+      if (!result.success || !result.completed) {
+        throw new AdapterFailure('stagehand-run-failed', result.message);
+      }
       return {
-        status: result.success && result.completed ? 'succeeded' : 'failed',
+        status: 'succeeded',
         receiptVerified: false,
         output: parseAgentOutput(result.message),
         telemetry: {
