@@ -1,5 +1,5 @@
-import { CustomOpenAIClient, Stagehand } from '@browserbasehq/stagehand';
-import OpenAI from 'openai';
+import { AISdkClient, Stagehand } from '@browserbasehq/stagehand';
+import { createOpenAI } from '@ai-sdk/openai';
 import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
 import { agentInstruction, parseAgentOutput, requiredUrl } from './agent-task.js';
 import { AdapterFailure } from './weles.js';
@@ -22,9 +22,9 @@ export class StagehandAdapter implements BenchmarkAdapter {
     if (!apiKey) throw new AdapterFailure('missing-brama-api-key');
     const model = this.options.model?.trim() || 'weles/agent/primary';
     const baseURL = this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1';
-    const llmClient = new CustomOpenAIClient({
-      modelName: model,
-      client: new OpenAI({ apiKey, baseURL }),
+    const provider = createOpenAI({ apiKey, baseURL });
+    const llmClient = new AISdkClient({
+      model: provider.chat(model),
     });
     const stagehand = new Stagehand({
       env: 'LOCAL',

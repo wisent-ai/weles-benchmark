@@ -15,10 +15,10 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@ai-sdk/openai": "2.0.118",
     "@browserbasehq/stagehand": "3.4.0",
     "@skyvern/client": "1.0.0",
-    "deepmerge": "4.3.1",
-    "openai": "4.104.0"
+    "deepmerge": "4.3.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
