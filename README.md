@@ -55,8 +55,8 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-browser-use.txt
 ```
 
-The Node lockfile pins Stagehand 3.4.0 and `@skyvern/client` 1.0.0. The Python
-requirements file pins Browser Use 0.13.7 and Playwright 1.55.0.
+The Node lockfile pins Stagehand 3.4.0 and `@skyvern/client` 1.0.0. Python
+requirements pin Browser Use 0.13.7, Playwright 1.55.0, and Skyvern 1.0.48.
 
 ## Common fixture suite
 
@@ -162,22 +162,13 @@ schema, polls `getRun` to a terminal state, and performs no hidden task retry.
 `SKYVERN_ENGINE` defaults to `skyvern-2.0`; `SKYVERN_MAX_STEPS` defaults to 20.
 A self-hosted URL may omit `SKYVERN_API_KEY` when that deployment permits it.
 
-For the dedicated-host comparison, `scripts/prepare-skyvern-host.sh` provisions
-Skyvern 1.0.48 and PostgreSQL in an isolated Docker Compose project, configures
-model access through Brama, waits for the API health check, and writes the
-generated API key to an owner-only Stado file. Install and invoke it through
-Stado:
-
-```sh
-stado host install-helper charless-mac-mini \
-  scripts/prepare-skyvern-host.sh weles-benchmark-prepare-skyvern
-stado host run-helper charless-mac-mini weles-benchmark-prepare-skyvern --json
-```
-
-The resulting API listens only on `127.0.0.1:18000`. During a four-adapter run,
-bind the fixture to the host's private Stado/Tailscale address and use that same
-URL for every adapter; Skyvern's container and the native-host clients must
-materialize an identical suite hash.
+When no remote Skyvern endpoint is configured, `scripts/run-comparison.sh` uses
+Skyvern 1.0.48 in its supported embedded mode with an in-memory SQLite database
+and a dedicated virtual environment. `scripts/skyvern-local-client.py` receives
+the same normalized task contract as every command adapter, starts headless
+Chromium, uses Brama as its OpenAI-compatible model endpoint, and returns the
+official Skyvern task output. No Docker daemon, PostgreSQL service, or provider
+credential is required.
 
 ## Command adapter
 

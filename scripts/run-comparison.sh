@@ -26,6 +26,9 @@ npm run build
 "$python" -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -r requirements-browser-use.txt
 .venv/bin/python -m playwright install chromium
+"$python" -m venv .skyvern-venv
+.skyvern-venv/bin/python -m pip install --disable-pip-version-check -r requirements-skyvern.txt
+.skyvern-venv/bin/python -m playwright install chromium
 
 node dist/cli.js fixture --host "$fixture_host" --port 8787 >"$results_dir/fixture.log" 2>&1 &
 fixture_pid=$!
@@ -74,6 +77,23 @@ run_adapter stagehand
 
 if [[ -n "${SKYVERN_API_KEY:-}" || -n "${SKYVERN_BASE_URL:-}" ]]; then
   run_adapter skyvern
+else
+  set +e
+  node dist/cli.js run \
+    --suite "$suite" \
+    --fixture-origin "$fixture_origin" \
+    --adapter command \
+    --command .skyvern-venv/bin/python \
+    --command-arg scripts/skyvern-local-client.py \
+    --command-env BRAMA_API_KEY \
+    --command-env BRAMA_BASE_URL \
+    --command-env BRAMA_MODEL \
+    --command-env SKYVERN_MAX_STEPS \
+    --adapter-name skyvern \
+    --out "$results_dir/skyvern.json"
+  skyvern_status=$?
+  set -e
+  printf '%s\t%s\n' skyvern "$skyvern_status" >>"$results_dir/exit-status.tsv"
 fi
 
 for candidate in browser-use stagehand skyvern; do
