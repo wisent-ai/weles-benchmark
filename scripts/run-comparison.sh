@@ -83,19 +83,27 @@ for (const name of ["weles", "browser-use", "stagehand", "skyvern"]) {
   const file = path.join(dir, `${name}.json`);
   if (!fs.existsSync(file)) continue;
   const run = JSON.parse(fs.readFileSync(file, "utf8"));
+  const failureCodes = {};
+  for (const sample of run.samples ?? []) {
+    if (sample.failureCode) {
+      failureCodes[sample.failureCode] = (failureCodes[sample.failureCode] ?? 0) + 1;
+    }
+  }
   rows.push({
     adapter: name,
-    suiteSha256: run.suite?.sha256 ?? run.suiteSha256,
-    samples: run.summary?.samples,
-    successRate: run.summary?.successRate,
-    p50DurationMs: run.summary?.durationMs?.p50,
-    p95DurationMs: run.summary?.durationMs?.p95,
+    suiteSha256: run.suite?.sha256,
+    samples: run.metrics?.samples,
+    successRate: run.metrics?.successRate,
+    p50DurationMs: run.metrics?.durationMs?.p50,
+    p95DurationMs: run.metrics?.durationMs?.p95,
     qualification: run.qualification?.passed,
-    failures: run.summary?.failures,
+    failureCodes,
   });
 }
 fs.writeFileSync(path.join(dir, "comparison-summary.json"), `${JSON.stringify({ schema: "weles.benchmark.comparison-summary.v1", rows }, null, 2)}\n`);
 ' "$results_dir"
 
-tar -czf weles-benchmark-results.tgz "$results_dir"
-stado artifact upload weles-benchmark-results.tgz
+cat "$results_dir/comparison-summary.json"
+archive="${RESULTS_ARCHIVE:-$HOME/.stado/files/weles-benchmark-results.tgz}"
+tar -czf "$archive" "$results_dir"
+printf 'Results archive: %s\n' "$archive"
