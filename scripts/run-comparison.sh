@@ -30,17 +30,25 @@ npm run build
 "$python" -m venv .skyvern-venv
 .skyvern-venv/bin/python -m pip install --disable-pip-version-check -r requirements-skyvern.txt
 .skyvern-venv/bin/python -m playwright install chromium
+export BRAMA_UPSTREAM_BASE_URL="${BRAMA_BASE_URL:-http://127.0.0.1:8080/v1}"
+export BRAMA_PROXY_PORT="${BRAMA_PROXY_PORT:-8789}"
+node scripts/brama-openai-proxy.mjs >"$results_dir/brama-proxy.log" 2>&1 &
+brama_proxy_pid=$!
+
 
 node dist/cli.js fixture --host "$fixture_host" --port 8787 >"$results_dir/fixture.log" 2>&1 &
 fixture_pid=$!
 cleanup() {
   kill "$fixture_pid" 2>/dev/null || true
+  kill "$brama_proxy_pid" 2>/dev/null || true
 }
 trap cleanup EXIT
 sleep 2
-
-export BRAMA_BASE_URL="${BRAMA_BASE_URL:-http://127.0.0.1:8080/v1}"
+export BRAMA_BASE_URL="http://127.0.0.1:${BRAMA_PROXY_PORT}/v1"
 export BRAMA_MODEL="${BRAMA_MODEL:-gpt-5.4-mini}"
+if [[ -z "${ALLOWED_HOSTS:-}" ]]; then
+  export ALLOWED_HOSTS='["127.0.0.1"]'
+fi
 export BROWSER_USE_PYTHON="${BROWSER_USE_PYTHON:-.venv/bin/python}"
 if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" ]]; then
   shopt -s nullglob
@@ -91,6 +99,7 @@ else
     --command-env BRAMA_API_KEY \
     --command-env BRAMA_BASE_URL \
     --command-env BRAMA_MODEL \
+    --command-env ALLOWED_HOSTS \
     --command-env SKYVERN_MAX_STEPS \
     --adapter-name skyvern \
     --out "$results_dir/skyvern.json"

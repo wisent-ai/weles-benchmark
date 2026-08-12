@@ -107,7 +107,9 @@ The bearer is accepted only through `WELES_TOKEN`.
 ## Browser Use through Brama
 
 ```sh
-export BRAMA_BASE_URL=http://127.0.0.1:8080/v1
+export BRAMA_UPSTREAM_BASE_URL=http://127.0.0.1:8080/v1
+node scripts/brama-openai-proxy.mjs &
+export BRAMA_BASE_URL=http://127.0.0.1:8789/v1
 export BRAMA_API_KEY=workload-scoped-brama-token
 export BRAMA_MODEL=gpt-5.4-mini
 export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
@@ -121,13 +123,17 @@ node dist/cli.js run \
 ```
 
 The Python client runs Browser Use 0.13.7 in headless DOM mode, disables its
-secondary judge, and records its step, token, and cost totals. Model traffic is
-OpenAI-compatible traffic to Brama; no provider API key is used.
+secondary judge, and records its step, token, and cost totals. The loopback
+request adapter removes OpenAI-only optional fields and maps
+`max_completion_tokens` onto Brama's provider-neutral request contract; it
+forwards the workload-scoped Brama bearer and never accepts provider keys.
 
 ## Stagehand through Brama
 
 ```sh
-export BRAMA_BASE_URL=http://127.0.0.1:8080/v1
+export BRAMA_UPSTREAM_BASE_URL=http://127.0.0.1:8080/v1
+node scripts/brama-openai-proxy.mjs &
+export BRAMA_BASE_URL=http://127.0.0.1:8789/v1
 export BRAMA_API_KEY=workload-scoped-brama-token
 export BRAMA_MODEL=gpt-5.4-mini
 export BROWSER_EXECUTABLE_PATH=/absolute/path/to/Chromium
@@ -141,7 +147,9 @@ node dist/cli.js run \
 
 Stagehand 3.4.0 runs locally in DOM agent mode. `--model` and
 `--browser-executable` override the corresponding environment values without
-putting credentials on the command line.
+putting credentials on the command line. `scripts/run-comparison.sh` starts the
+loopback Brama request adapter once for Browser Use, Stagehand, and embedded
+Skyvern, then terminates it with the fixture.
 
 ## Skyvern
 
@@ -166,9 +174,9 @@ When no remote Skyvern endpoint is configured, `scripts/run-comparison.sh` uses
 Skyvern 1.0.48 in its supported embedded mode with an in-memory SQLite database
 and a dedicated virtual environment. `scripts/skyvern-local-client.py` receives
 the same normalized task contract as every command adapter, starts headless
-Chromium, uses Brama as its OpenAI-compatible model endpoint, and returns the
-official Skyvern task output. No Docker daemon, PostgreSQL service, or provider
-credential is required.
+Chromium, reaches Brama through the same loopback request adapter, and returns
+the official Skyvern task output. No Docker daemon, PostgreSQL service, or
+provider credential is required.
 
 ## Command adapter
 

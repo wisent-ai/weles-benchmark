@@ -35,6 +35,7 @@ export class StagehandAdapter implements BenchmarkAdapter {
         ...(this.options.executablePath?.trim() ? { executablePath: this.options.executablePath.trim() } : {}),
       },
       disableAPI: true,
+      experimental: true,
       disablePino: true,
       verbose: 0,
     });
