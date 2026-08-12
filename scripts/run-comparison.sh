@@ -48,7 +48,7 @@ if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" ]]; then
       printf 'No dedicated-host Chromium executable found\n' >&2
       exit 2
     fi
-    export BROWSER_EXECUTABLE_PATH="${browser_candidates[-1]}"
+    export BROWSER_EXECUTABLE_PATH="${browser_candidates[$((${#browser_candidates[@]} - 1))]}"
   fi
 fi
 export WELES_API_BASE="${WELES_API_BASE:-http://127.0.0.1:8788}"
