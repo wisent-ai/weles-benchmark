@@ -20,10 +20,11 @@ export class StagehandAdapter implements BenchmarkAdapter {
     const apiKey = this.options.apiKey?.trim();
     if (!apiKey) throw new AdapterFailure('missing-brama-api-key');
     const model = this.options.model?.trim() || 'gpt-5.4-mini';
+    const modelName = model.includes('/') ? model : `openai/${model}`;
     const stagehand = new Stagehand({
       env: 'LOCAL',
       model: {
-        modelName: model,
+        modelName,
         provider: 'openai',
         apiKey,
         baseURL: this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1',

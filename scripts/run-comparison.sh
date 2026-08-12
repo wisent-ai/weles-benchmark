@@ -24,6 +24,7 @@ npm ci --ignore-scripts
 npm run build
 "$python" -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check -r requirements-browser-use.txt
+.venv/bin/python -m playwright install chromium
 
 node dist/cli.js fixture --host 127.0.0.1 --port 8787 >"$results_dir/fixture.log" 2>&1 &
 fixture_pid=$!
@@ -36,8 +37,19 @@ sleep 2
 export BRAMA_BASE_URL="${BRAMA_BASE_URL:-http://127.0.0.1:8080/v1}"
 export BRAMA_MODEL="${BRAMA_MODEL:-gpt-5.4-mini}"
 export BROWSER_USE_PYTHON="${BROWSER_USE_PYTHON:-.venv/bin/python}"
-if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" && -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  export BROWSER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+if [[ -z "${BROWSER_EXECUTABLE_PATH:-}" ]]; then
+  if [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
+    export BROWSER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  else
+    shopt -s nullglob
+    browser_candidates=("$HOME"/Library/Caches/ms-playwright/chromium-*/chrome-mac*/Chromium.app/Contents/MacOS/Chromium)
+    shopt -u nullglob
+    if (( ${#browser_candidates[@]} == 0 )); then
+      printf 'No dedicated-host Chromium executable found\n' >&2
+      exit 2
+    fi
+    export BROWSER_EXECUTABLE_PATH="${browser_candidates[-1]}"
+  fi
 fi
 export WELES_API_BASE="${WELES_API_BASE:-http://127.0.0.1:8788}"
 
