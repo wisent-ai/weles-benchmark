@@ -6,4 +6,4 @@ if [ ! -r "$archive" ]; then
   printf 'missing benchmark results archive: %s\n' "$archive" >&2
   exit 1
 fi
-exec /usr/bin/base64 "$archive"
+exec /usr/bin/base64 -i "$archive"
