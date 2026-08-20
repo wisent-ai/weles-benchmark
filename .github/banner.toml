@@ -1,11 +1,13 @@
 [automation]
 managed = true
-source_fingerprint = "fb3a7f8787f7b1bc"
+source_fingerprint = "950cd68eebaceed7"
 category = "benchmark"
+copy_status = "missing"
+approved_in = ""
 
 [banner]
-title = "Weles Benchmark measures. Progress proven."
-description = "Reproducible benchmark harness for authorized Weles browser workflows"
+title = "Weles Benchmark"
+description = ""
 product = "Wisent"
 url = "wisent.com"
 theme = "dark"
