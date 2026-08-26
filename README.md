@@ -50,7 +50,7 @@ flowchart LR
   stagehand --> agents
   agents --> normalized[Normalized result]
   normalized --> assertions[Assertions and metrics]
-  assertions --> artifacts[Sanitized JSON and Markdown]
+  assertions --> artifacts[Sanitized JSON]
 ```
 
 ## Install
@@ -211,14 +211,14 @@ MiB, and the process is terminated at the case timeout.
 
 ## Reports and comparisons
 
-Each run writes a JSON artifact and a sibling Markdown report. Compare runs only
-when they carry the same materialized suite hash:
+Each run writes one sanitized JSON artifact. Compare runs only when they carry
+the same materialized suite hash:
 
 ```sh
 node dist/cli.js compare \
   --baseline results/weles.json \
   --candidate results/stagehand.json \
-  --out results/weles-vs-stagehand.md
+  --out results/weles-vs-stagehand.json
 ```
 
 Duration ratios are candidate divided by baseline, so lower is faster. Success

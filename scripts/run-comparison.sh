@@ -113,7 +113,7 @@ for candidate in browser-use stagehand skyvern; do
     node dist/cli.js compare \
       --baseline "$results_dir/weles.json" \
       --candidate "$results_dir/$candidate.json" \
-      --out "$results_dir/weles-vs-$candidate.md"
+      --out "$results_dir/weles-vs-$candidate.json"
   fi
 done
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import { dirname, extname } from 'node:path';
+import { dirname } from 'node:path';
 import { BrowserUseAdapter } from './adapters/browser-use.js';
 import { CommandAdapter } from './adapters/command.js';
 import { SkyvernAdapter } from './adapters/skyvern.js';
 import { StagehandAdapter } from './adapters/stagehand.js';
 import { WelesAdapter } from './adapters/weles.js';
 import { serveFixture } from './fixture.js';
-import { compareRuns, markdownComparison, markdownReport } from './report.js';
+import { compareRuns } from './comparison.js';
 import { runBenchmark } from './runner.js';
 import { loadSuite } from './suite.js';
 import type { BenchmarkAdapter, BenchmarkRun } from './types.js';
@@ -30,8 +30,7 @@ Commands:
       Skyvern: [--skyvern-base-url <url>]
       Stagehand: [--model <Brama-model>] [--browser-executable <path>]
       Command: --command <executable> [--command-arg <arg>] [--command-env <name>]
-  report --input <run.json> [--out <report.md>]
-  compare --baseline <run.json> --candidate <run.json> [--out <comparison.md>] [--json]
+  compare --baseline <run.json> --candidate <run.json> [--out <comparison.json>]
 
 Credentials come only from WELES_TOKEN, SKYVERN_API_KEY, and BRAMA_API_KEY.
 Service/model locations default to WELES_API_BASE, SKYVERN_BASE_URL,
@@ -57,21 +56,12 @@ async function main(): Promise<void> {
     await runCommand(parsed);
     return;
   }
-  if (parsed.command === 'report') {
-    assertAllowedOptions(parsed, ['input', 'out']);
-    const run = await loadRun(requiredOption(parsed, 'input'));
-    const report = markdownReport(run);
-    const output = option(parsed, 'out');
-    if (output) await writeAtomic(output, report);
-    else process.stdout.write(report);
-    return;
-  }
   if (parsed.command === 'compare') {
-    assertAllowedOptions(parsed, ['baseline', 'candidate', 'out', 'json']);
+    assertAllowedOptions(parsed, ['baseline', 'candidate', 'out']);
     const baseline = await loadRun(requiredOption(parsed, 'baseline'));
     const candidate = await loadRun(requiredOption(parsed, 'candidate'));
     const comparison = compareRuns(baseline, candidate);
-    const body = parsed.options.json ? `${JSON.stringify(comparison, null, 2)}\n` : markdownComparison(comparison);
+    const body = `${JSON.stringify(comparison, null, 2)}\n`;
     const output = option(parsed, 'out');
     if (output) await writeAtomic(output, body);
     else process.stdout.write(body);
@@ -82,7 +72,7 @@ async function main(): Promise<void> {
 
 async function runCommand(parsed: Arguments): Promise<void> {
   assertAllowedOptions(parsed, [
-    'suite', 'adapter', 'out', 'report-out', 'fixture-origin', 'repetitions', 'concurrency',
+    'suite', 'adapter', 'out', 'fixture-origin', 'repetitions', 'concurrency',
     'endpoint', 'python', 'skyvern-base-url', 'model', 'browser-executable',
     'command', 'command-arg', 'command-env', 'adapter-name',
   ]);
@@ -99,14 +89,11 @@ async function runCommand(parsed: Arguments): Promise<void> {
     ...(concurrency === undefined ? {} : { concurrency }),
   });
   const output = option(parsed, 'out') ?? `results/${safeName(loaded.suite.name)}-${timestamp()}.json`;
-  const reportOutput = option(parsed, 'report-out') ?? `${output.slice(0, extname(output) ? -extname(output).length : undefined)}.md`;
   await writeAtomic(output, `${JSON.stringify(result, null, 2)}\n`);
-  await writeAtomic(reportOutput, markdownReport(result));
   process.stdout.write(`${JSON.stringify({
     schema: result.schema,
     runId: result.runId,
     result: output,
-    report: reportOutput,
     qualification: result.qualification,
   }, null, 2)}\n`);
   if (!result.qualification.passed) process.exitCode = 1;
