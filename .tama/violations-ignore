@@ -2,3 +2,10 @@
 # from .github/banner.toml and replaced whole on every run, so a repository
 # audit reads it as generated output instead of asking somebody to split it.
 assets/readme-banner.svg
+# The repository root. Every file there is read by a tool at exactly that path:
+# npm reads package.json, package-lock.json and .npmrc, TypeScript reads
+# tsconfig.json, pip reads requirements-browser-use.txt and
+# requirements-skyvern.txt for the two agents this benchmark drives, the run
+# reads .env built from .env.example, GitHub reads README.md and LICENSE, git
+# reads .gitignore. The benchmark's own code lives under src/.
+.

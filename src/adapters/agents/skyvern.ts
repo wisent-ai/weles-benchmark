@@ -1,7 +1,7 @@
 import { SkyvernClient, type Skyvern } from '@skyvern/client';
-import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
+import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../../types.js';
 import { agentInstruction, outputSchema, parseAgentOutput, requiredUrl } from './agent-task.js';
-import { AdapterFailure } from './weles.js';
+import { AdapterFailure } from '../weles.js';
 
 const TERMINAL = new Set(['completed', 'failed', 'terminated', 'timed_out', 'canceled']);
 

@@ -1,4 +1,4 @@
-import type { BenchmarkCase, JsonValue } from '../types.js';
+import type { BenchmarkCase, JsonValue } from '../../types.js';
 
 export function agentInstruction(benchmarkCase: BenchmarkCase): string {
   const schema = outputSchema(benchmarkCase);

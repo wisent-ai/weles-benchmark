@@ -2,15 +2,15 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { BrowserUseAdapter } from './adapters/browser-use.js';
+import { BrowserUseAdapter } from './adapters/agents/browser-use.js';
 import { CommandAdapter } from './adapters/command.js';
-import { SkyvernAdapter } from './adapters/skyvern.js';
-import { StagehandAdapter } from './adapters/stagehand.js';
+import { SkyvernAdapter } from './adapters/agents/skyvern.js';
+import { StagehandAdapter } from './adapters/agents/stagehand.js';
 import { WelesAdapter } from './adapters/weles.js';
 import { serveFixture } from './fixture.js';
-import { compareRuns } from './comparison.js';
-import { runBenchmark } from './runner.js';
-import { loadSuite } from './suite.js';
+import { compareRuns } from './run/comparison.js';
+import { runBenchmark } from './run/runner.js';
+import { loadSuite } from './run/suite.js';
 import type { BenchmarkAdapter, BenchmarkRun } from './types.js';
 
 type Arguments = {

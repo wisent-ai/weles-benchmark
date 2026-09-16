@@ -5,7 +5,7 @@ import type {
   CaseMetrics,
   Distribution,
   Qualification,
-} from './types.js';
+} from '../types.js';
 
 export function aggregateMetrics(samples: BenchmarkSample[]): BenchmarkMetrics {
   if (samples.length === 0) throw new Error('cannot aggregate an empty benchmark run');

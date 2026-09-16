@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import type { Assertion, BenchmarkCase, BenchmarkSuite, JsonObject, JsonValue } from './types.js';
+import type { Assertion, BenchmarkCase, BenchmarkSuite, JsonObject, JsonValue } from '../types.js';
 
 const SENSITIVE_KEY = /(?:^|[_-])(authorization|bearer|cookie|password|private[_-]?key|secret|session|token)(?:$|[_-])/i;
 

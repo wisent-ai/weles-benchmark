@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
-import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
-import { CommandAdapter } from './command.js';
+import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../../types.js';
+import { CommandAdapter } from '../command.js';
 
 const ENVIRONMENT = [
   'BRAMA_API_KEY',

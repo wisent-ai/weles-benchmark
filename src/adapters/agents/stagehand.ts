@@ -1,8 +1,8 @@
 import { AISdkClient, Stagehand } from '@browserbasehq/stagehand';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
+import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../../types.js';
 import { agentInstruction, parseAgentOutput, requiredUrl } from './agent-task.js';
-import { AdapterFailure } from './weles.js';
+import { AdapterFailure } from '../weles.js';
 
 export class StagehandAdapter implements BenchmarkAdapter {
   readonly name = 'stagehand';

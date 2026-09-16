@@ -1,4 +1,4 @@
-import type { BenchmarkRun, Comparison } from './types.js';
+import type { BenchmarkRun, Comparison } from '../types.js';
 
 export function compareRuns(baseline: BenchmarkRun, candidate: BenchmarkRun): Comparison {
   if (baseline.suite.sha256 !== candidate.suite.sha256) throw new Error('runs use different suite revisions');

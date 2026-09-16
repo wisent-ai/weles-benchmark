@@ -1,5 +1,5 @@
 import type { AdapterExecution, AdapterResult, BenchmarkAdapter } from '../types.js';
-import { agentInstruction, parseAgentOutput } from './agent-task.js';
+import { agentInstruction, parseAgentOutput } from './agents/agent-task.js';
 
 export class AdapterFailure extends Error {
   constructor(readonly code: string, readonly detail?: string) {

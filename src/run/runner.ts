@@ -10,7 +10,7 @@ import type {
   BenchmarkSample,
   BenchmarkSuite,
   JsonValue,
-} from './types.js';
+} from '../types.js';
 
 export async function runBenchmark(options: {
   suite: BenchmarkSuite;
