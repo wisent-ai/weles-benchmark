@@ -22,6 +22,9 @@ function ratio(candidate: number, baseline: number): number | null {
   return baseline === 0 ? null : rounded(candidate / baseline);
 }
 
+// Ratios and rates are reported to four decimal places.
+const ROUNDING_SCALE = 10_000;
+
 function rounded(value: number): number {
-  return Math.round(value * 10_000) / 10_000;
+  return Math.round(value * ROUNDING_SCALE) / ROUNDING_SCALE;
 }

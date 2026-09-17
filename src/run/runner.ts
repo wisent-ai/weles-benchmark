@@ -126,8 +126,12 @@ async function executeSample(options: {
   }
 }
 
+// Elapsed times are reported to two decimal places; an error detail keeps its last thousand characters.
+const ELAPSED_SCALE = 100;
+const DETAIL_TAIL_LENGTH = 1_000;
+
 function elapsed(started: number): number {
-  return Math.round((performance.now() - started) * 100) / 100;
+  return Math.round((performance.now() - started) * ELAPSED_SCALE) / ELAPSED_SCALE;
 }
 
 function failureCode(acceptedStatus: boolean, acceptedReceipt: boolean, assertionsPassed: number, assertionsTotal: number): string {
@@ -164,7 +168,7 @@ function safeErrorDetail(error: unknown): string | undefined {
     .replace(/\b[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]{10,})?\b/g, '[redacted-token]')
     .replace(/\s+/g, ' ')
     .trim();
-  return redacted ? redacted.slice(-1_000) : undefined;
+  return redacted ? redacted.slice(-DETAIL_TAIL_LENGTH) : undefined;
 }
 
 function evaluateAssertion(output: JsonValue, assertion: Assertion): boolean {

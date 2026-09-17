@@ -85,14 +85,19 @@ function percentile(sorted: number[], quantile: number): number {
   return lowerValue + (upperValue - lowerValue) * (index - lower);
 }
 
+const MEDIAN_QUANTILE = 0.5;
+
 function median(values: number[]): number {
-  return percentile([...values].sort((left, right) => left - right), 0.5);
+  return percentile([...values].sort((left, right) => left - right), MEDIAN_QUANTILE);
 }
 
 function rate(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : rounded(numerator / denominator);
 }
 
+// Ratios and rates are reported to four decimal places.
+const ROUNDING_SCALE = 10_000;
+
 function rounded(value: number): number {
-  return Math.round(value * 10_000) / 10_000;
+  return Math.round(value * ROUNDING_SCALE) / ROUNDING_SCALE;
 }

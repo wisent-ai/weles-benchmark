@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
 const BODY_LIMIT = 16 * 1024;
+const HTTP_INTERNAL_ERROR = 500;
 const SECURITY_HEADERS = {
   'Cache-Control': 'no-store',
   'Content-Security-Policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
@@ -11,7 +12,7 @@ const SECURITY_HEADERS = {
 export async function serveFixture(options: { host: string; port: number }): Promise<void> {
   const server = createServer((request, response) => {
     route(request, response).catch(() => {
-      if (!response.headersSent) write(response, 500, 'Internal fixture error');
+      if (!response.headersSent) write(response, HTTP_INTERNAL_ERROR, 'Internal fixture error');
       else response.destroy();
     });
   });
