@@ -13,6 +13,10 @@ import { runBenchmark } from './run/runner.js';
 import { loadSuite } from './run/suite.js';
 import type { BenchmarkAdapter, BenchmarkRun } from './types.js';
 
+// The invocation itself is wrong: exit 2, apart from a failed or
+// non-qualifying run's 1 (cli.md rule 10).
+class UsageError extends Error {}
+
 type Arguments = {
   command: string;
   positionals: string[];
@@ -40,7 +44,7 @@ flags or written to result files.
 
 async function main(): Promise<void> {
   const parsed = parseArguments(process.argv.slice(2));
-  if (parsed.command === 'help' || parsed.options.help) {
+  if (parsed.command === 'help' || parsed.command === '--help' || parsed.command === '-h' || parsed.options.help) {
     process.stdout.write(HELP);
     return;
   }
@@ -67,7 +71,7 @@ async function main(): Promise<void> {
     else process.stdout.write(body);
     return;
   }
-  throw new Error(`unknown command: ${parsed.command}`);
+  throw new UsageError(`unknown command: ${parsed.command}\n\n${HELP}`);
 }
 
 async function runCommand(parsed: Arguments): Promise<void> {
@@ -134,7 +138,7 @@ function createAdapter(parsed: Arguments): BenchmarkAdapter {
       option(parsed, 'adapter-name'),
     );
   }
-  throw new Error('--adapter must be weles, browser-use, skyvern, stagehand, or command');
+  throw new UsageError('--adapter must be weles, browser-use, skyvern, stagehand, or command');
 }
 
 function parseArguments(values: string[]): Arguments {
@@ -149,7 +153,7 @@ function parseArguments(values: string[]): Arguments {
       continue;
     }
     const key = value.slice(2);
-    if (!key) throw new Error('empty option name');
+    if (!key) throw new UsageError('empty option name');
     const next = values[index + 1];
     const optionValue = next && !next.startsWith('--') ? next : 'true';
     if (optionValue !== 'true') index += 1;
@@ -159,29 +163,29 @@ function parseArguments(values: string[]): Arguments {
 }
 
 function assertAllowedOptions(parsed: Arguments, allowed: string[]): void {
-  if (parsed.positionals.length > 0) throw new Error(`unexpected positional arguments: ${parsed.positionals.join(', ')}`);
+  if (parsed.positionals.length > 0) throw new UsageError(`unexpected positional arguments: ${parsed.positionals.join(', ')}`);
   for (const key of Object.keys(parsed.options)) {
-    if (!allowed.includes(key) && key !== 'help') throw new Error(`unsupported option for ${parsed.command}: --${key}`);
+    if (!allowed.includes(key) && key !== 'help') throw new UsageError(`unsupported option for ${parsed.command}: --${key}`);
   }
 }
 
 function option(parsed: Arguments, key: string): string | undefined {
   const values = parsed.options[key];
   if (!values?.length) return undefined;
-  if (values.length !== 1) throw new Error(`--${key} may be supplied only once`);
-  if (values[0] === 'true') throw new Error(`--${key} requires a value`);
+  if (values.length !== 1) throw new UsageError(`--${key} may be supplied only once`);
+  if (values[0] === 'true') throw new UsageError(`--${key} requires a value`);
   return values[0];
 }
 
 function requiredOption(parsed: Arguments, key: string): string {
   const value = option(parsed, key);
-  if (!value) throw new Error(`--${key} is required`);
+  if (!value) throw new UsageError(`--${key} is required`);
   return value;
 }
 
 function positiveInteger(value: string, label: string): number {
   const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1) throw new Error(`${label} must be a positive integer`);
+  if (!Number.isInteger(parsed) || parsed < 1) throw new UsageError(`${label} must be a positive integer`);
   return parsed;
 }
 
@@ -218,5 +222,5 @@ function timestamp(): string {
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : 'unknown failure';
   process.stderr.write(`weles-benchmark: ${message}\n`);
-  process.exitCode = 1;
+  process.exitCode = error instanceof UsageError ? 2 : 1;
 });
