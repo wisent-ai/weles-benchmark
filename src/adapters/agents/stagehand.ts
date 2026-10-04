@@ -15,13 +15,16 @@ export class StagehandAdapter implements BenchmarkAdapter {
     executablePath?: string;
   }) {
     if (!options.apiKey?.trim()) throw new AdapterFailure('missing-brama-api-key');
+    // No Brama address is built in: BRAMA_BASE_URL names the gateway.
+    if (!options.baseUrl?.trim()) throw new AdapterFailure('missing-brama-base-url');
   }
 
   async execute(execution: AdapterExecution): Promise<AdapterResult> {
     const apiKey = this.options.apiKey?.trim();
     if (!apiKey) throw new AdapterFailure('missing-brama-api-key');
     const model = this.options.model?.trim() || 'weles/agent/primary';
-    const baseURL = this.options.baseUrl?.trim() || 'http://127.0.0.1:8080/v1';
+    const baseURL = this.options.baseUrl?.trim();
+    if (!baseURL) throw new AdapterFailure('missing-brama-base-url');
     const provider = createOpenAI({ apiKey, baseURL });
     const languageModel = provider.chat(model);
     const llmClient = Object.assign(
