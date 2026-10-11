@@ -39,7 +39,14 @@ export class SkyvernAdapter implements BenchmarkAdapter {
     while (!TERMINAL.has(response.status)) {
       const delay = Math.min(execution.pollIntervalMs, deadline - Date.now());
       if (delay <= 0) {
-        await this.client.cancelRun(response.run_id).catch(() => undefined);
+        // A run that cannot be cancelled keeps running, and billing, after
+        // the case: the timeout says so instead of dropping the cause.
+        try {
+          await this.client.cancelRun(response.run_id);
+        } catch (error) {
+          const cause = error instanceof Error ? error.message : String(error);
+          throw new AdapterFailure('skyvern-timeout', `run ${response.run_id} could not be cancelled and may still be running: ${cause}`);
+        }
         throw new AdapterFailure('skyvern-timeout');
       }
       await new Promise((resolve) => setTimeout(resolve, delay));

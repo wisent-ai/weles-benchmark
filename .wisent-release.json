@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "product": "weles-benchmark",
+  "releases": false,
+  "reason": "The benchmark source and result format are versioned in git, as .github/release-policy.json states; package.json is private and the build workflow only compiles, so the repository publishes no package or service."
+}

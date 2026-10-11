@@ -43,6 +43,7 @@ export class StagehandAdapter implements BenchmarkAdapter {
       disablePino: true,
       verbose: 0,
     });
+    let executed = false;
     try {
       await stagehand.init();
       const page = await stagehand.context.awaitActivePage();
@@ -56,6 +57,7 @@ export class StagehandAdapter implements BenchmarkAdapter {
       if (!result.success || !result.completed) {
         throw new AdapterFailure('stagehand-run-failed', result.message);
       }
+      executed = true;
       return {
         status: 'succeeded',
         receiptVerified: false,
@@ -69,7 +71,16 @@ export class StagehandAdapter implements BenchmarkAdapter {
         },
       };
     } finally {
-      await stagehand.close({ force: true }).catch(() => undefined);
+      // A browser that does not close keeps running after the case: it is
+      // said, and it fails a case that otherwise succeeded; an earlier error
+      // is not replaced by it.
+      try {
+        await stagehand.close({ force: true });
+      } catch (error) {
+        const cause = error instanceof Error ? error.message : String(error);
+        console.error(`stagehand browser close failed, Chromium may still be running: ${cause}`);
+        if (executed) throw new AdapterFailure('stagehand-close-failed', cause);
+      }
     }
   }
 }
