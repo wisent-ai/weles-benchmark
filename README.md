@@ -4,9 +4,9 @@
 
 # weles-benchmark (retired)
 
-The code in this repository is superseded and no longer maintained. Weles is
-measured against its rivals by **Probierz**, which runs every product's
-benchmark the same way.
+This repository no longer holds code. Weles is measured against its rivals by
+**Probierz**, which runs every product's benchmark the same way; what used to
+live here moved as follows.
 
 | What it was here | Where it is now |
 |---|---|

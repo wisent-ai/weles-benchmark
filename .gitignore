@@ -1,9 +1,1 @@
-node_modules/
-dist/
-.venv/
-.skyvern-venv/
-results/
-.env
-.env.*
-!.env.example
 .DS_Store
